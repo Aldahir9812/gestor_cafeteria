@@ -56,7 +56,16 @@ class ApiClient {
     final json = _tryDecode(response);
     final code = response.statusCode;
     if (code >= 200 && code <= 300) return json;
-    throw UnexpectedFailure(code, 'Error inesperado del servidor');
+    throw switch (code) {
+      404 => NotFoundFailure(_detalle(json)),
+      409 => ConflictFailure(_detalle(json)),
+      _ => UnexpectedFailure(code, _detalle(json)),
+    };
+  }
+
+  String _detalle(dynamic json) {
+    if (json is Map && json['detail'] is String) return json['detail'];
+    return 'Error inesperado del servidor';
   }
 
   dynamic _tryDecode(http.Response response) {
